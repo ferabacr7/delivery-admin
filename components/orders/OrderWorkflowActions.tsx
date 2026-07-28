@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ORDER_WORKFLOW_ACTIONS } from "@/constants/workflow";
 import { updateDeliveryWorkflow } from "@/services/deliveryService";
 import type { OrderStatus } from "@/types/order";
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
 
 type OrderWorkflowActionsProps = {
   orderId: string;
@@ -18,15 +20,24 @@ export function OrderWorkflowActions({
   status,
 }: OrderWorkflowActionsProps) {
   const router = useRouter();
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
   const [loading, setLoading] = useState(false);
 
   const action = ORDER_WORKFLOW_ACTIONS[status];
 
   if (!action) {
-    return <span className="text-sm text-slate-400">Sin acción</span>;
+    return <span className="text-sm text-slate-400">{t.noAction}</span>;
   }
 
   const workflowAction = action;
+
+  const actionLabels: Partial<Record<OrderStatus, string>> = {
+    IN_PROGRESS: t.actionStartPreparation,
+    ON_ROUTE: t.actionSendOnRoute,
+    DELIVERED: t.actionMarkDelivered,
+  };
 
   async function handleClick() {
     try {
@@ -39,9 +50,7 @@ export function OrderWorkflowActions({
       console.error("Workflow update error:", error);
 
       const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo actualizar el estado del pedido.";
+        error instanceof Error ? error.message : t.workflowUpdateError;
 
       alert(message);
     } finally {
@@ -59,10 +68,10 @@ export function OrderWorkflowActions({
       {loading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Actualizando
+          {t.updating}
         </>
       ) : (
-        workflowAction.label
+        actionLabels[workflowAction.nextStatus] ?? workflowAction.label
       )}
     </Button>
   );

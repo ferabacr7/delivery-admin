@@ -1,10 +1,9 @@
+"use client";
+
+import Link from "next/link";
+import { Fragment, useContext } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,120 +13,145 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { OrderWorkflowActions } from "@/components/orders/OrderWorkflowActions";
-import type { AdminOrder } from "@/types/order";
+import { QuoteForm } from "@/components/orders/QuoteForm";
+import type { AdminOrder, OrderStatus } from "@/types/order";
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
 
 type RecentOrdersProps = {
   orders: AdminOrder[];
 };
 
-function formatStatus(status: string) {
-  const labels: Record<string, string> = {
-    VALIDATION: "Nuevo",
-    QUOTED: "Cotizado",
-    ACCEPTED: "Aceptado",
-    REJECTED: "Rechazado",
-    IN_PROGRESS: "En preparación",
-    ON_ROUTE: "En ruta",
-    DELIVERED: "Entregado",
-    CANCELLED: "Cancelado",
-  };
-
-  return labels[status] ?? status;
-}
-
-function getBadgeClass(status: string) {
-  const styles: Record<string, string> = {
-    VALIDATION: "bg-blue-50 text-blue-700",
-    QUOTED: "bg-amber-50 text-amber-700",
-    ACCEPTED: "bg-emerald-50 text-emerald-700",
-    REJECTED: "bg-red-50 text-red-700",
-    IN_PROGRESS: "bg-purple-50 text-purple-700",
-    ON_ROUTE: "bg-cyan-50 text-cyan-700",
-    DELIVERED: "bg-green-50 text-green-700",
-    CANCELLED: "bg-slate-100 text-slate-600",
-  };
-
-  return styles[status] ?? "bg-slate-100 text-slate-600";
+function normalizeStatus(status: string): OrderStatus {
+  return status.toUpperCase() as OrderStatus;
 }
 
 export function RecentOrders({ orders }: RecentOrdersProps) {
-  const recentOrders = orders.slice(0, 8);
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
+  const statusLabels: Record<OrderStatus, string> = {
+    VALIDATION: t.statusValidation,
+    QUOTED: t.statusQuoted,
+    ACCEPTED: t.statusAccepted,
+    REJECTED: t.statusRejected,
+    IN_PROGRESS: t.statusInProgress,
+    ON_ROUTE: t.statusOnRoute,
+    DELIVERED: t.statusDelivered,
+    CANCELLED: t.statusCancelled,
+  };
 
   return (
-    <Card className="rounded-3xl border-none shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-bold text-slate-900">
-          Pedidos recientes
+    <Card className="rounded-3xl border-slate-200 shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold text-slate-900">
+          {t.recentOrdersTitle}
         </CardTitle>
-
-        <span className="text-sm font-medium text-[#12BFAE]">
-          Ver todos
-        </span>
       </CardHeader>
 
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Pedido</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Acción</TableHead>
-            </TableRow>
-          </TableHeader>
+        {orders.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center">
+            <p className="text-sm font-medium text-slate-700">
+              {t.recentOrdersEmptyTitle}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {t.recentOrdersEmptyDescription}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead>{t.tableCustomer}</TableHead>
+                  <TableHead>{t.tableOrder}</TableHead>
+                  <TableHead>{t.tableStatus}</TableHead>
+                  <TableHead>{t.tableTotal}</TableHead>
+                  <TableHead>{t.tableAction}</TableHead>
+                  <TableHead>Detalle</TableHead>
+                </TableRow>
+              </TableHeader>
 
-          <TableBody>
-            {recentOrders.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-10 text-center text-slate-500"
-                >
-                  No hay pedidos todavía.
-                </TableCell>
-              </TableRow>
-            ) : (
-              recentOrders.map((order) => {
-                const total = order.quotes?.[0]?.total ?? 0;
+              <TableBody>
+                {orders.map((order) => {
+                  const latestQuote = order.quotes?.[0] ?? null;
+                  const normalizedStatus = normalizeStatus(order.status);
 
-                return (
-                  <TableRow key={order.id} className="hover:bg-slate-50">
-                    <TableCell className="font-medium text-slate-900">
-                      {order.profiles?.full_name ?? "Cliente sin nombre"}
-                    </TableCell>
+                  return (
+                    <Fragment key={order.id}>
+                      <TableRow>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {order.profiles?.full_name ??
+                                t.customerWithoutName}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {order.profiles?.phone ?? t.customerWithoutPhone}
+                            </p>
+                          </div>
+                        </TableCell>
 
-                    <TableCell className="max-w-[260px] truncate text-slate-500">
-                      {order.description}
-                    </TableCell>
+                        <TableCell className="max-w-[320px]">
+                          <p className="text-sm text-slate-700">
+                            {order.description}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {order.addresses?.address_line ??
+                              t.orderWithoutAddress}
+                          </p>
+                        </TableCell>
 
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`rounded-full px-3 py-1 ${getBadgeClass(
-                          order.status
-                        )}`}
-                      >
-                        {formatStatus(order.status)}
-                      </Badge>
-                    </TableCell>
+                        <TableCell>
+                          <Badge className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-100">
+                            {statusLabels[normalizedStatus] ?? normalizedStatus}
+                          </Badge>
+                        </TableCell>
 
-                    <TableCell className="font-medium text-slate-700">
-                      ₡{total.toLocaleString("es-CR")}
-                    </TableCell>
+                        <TableCell>
+                          {latestQuote?.total ? (
+                            <span className="font-semibold text-slate-900">
+                              ₡{Number(latestQuote.total).toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-slate-400">
+                              {t.orderWithoutQuote}
+                            </span>
+                          )}
+                        </TableCell>
 
-                    <TableCell>
-                      <OrderWorkflowActions
-                        orderId={order.id}
-                        status={order.status}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+                        <TableCell>
+                          <OrderWorkflowActions
+                            orderId={order.id}
+                            status={normalizedStatus}
+                          />
+                        </TableCell>
+
+                        <TableCell>
+                          <Link
+                            href={`/orders/${order.id}`}
+                            className="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                          >
+                            Ver detalle
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+
+                      {normalizedStatus === "VALIDATION" && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="bg-slate-50 p-4">
+                            <QuoteForm orderId={order.id} />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

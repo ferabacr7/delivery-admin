@@ -4,6 +4,7 @@ import { RecentOrders } from "@/components/dashboard/RecentOrders";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { AutoRefresh } from "@/components/dashboard/AutoRefresh";
 import { getAdminOrders } from "@/services/adminOrderService";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default async function HomePage() {
   const orders = await getAdminOrders();
@@ -15,9 +16,7 @@ export default async function HomePage() {
       <AdminLayout>
         <section className="space-y-8">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              Dashboard
-            </h2>
+            <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
 
             <p className="mt-2 text-slate-500">
               Resumen operativo de Delivery App.
@@ -28,7 +27,7 @@ export default async function HomePage() {
 
           <div className="grid gap-8 xl:grid-cols-[1fr_360px]">
             <RecentOrders orders={orders} />
-            <ActivityFeed />
+            <ActivityFeed orders={orders} />
           </div>
         </section>
       </AdminLayout>

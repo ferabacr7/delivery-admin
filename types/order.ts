@@ -15,6 +15,7 @@ export type QuoteStatus =
   | "EXPIRED";
 
 export type AdminOrder = {
+  
   id: string;
   description: string;
   status: OrderStatus;
@@ -22,6 +23,7 @@ export type AdminOrder = {
   profile_id: string;
   address_id: string | null;
 
+  
   profiles?: {
     full_name: string;
     phone: string | null;
@@ -40,4 +42,21 @@ export type AdminOrder = {
     total: number | null;
     status: QuoteStatus;
   }[] | null;
+};
+
+export type AdminOrderDetail = AdminOrder & {
+  deliveries: {
+    id: string;
+    status: string;
+    driver_id: string | null;
+    started_at: string | null;
+    delivered_at: string | null;
+    created_at: string;
+    updated_at: string;
+
+    driver?: {
+      full_name: string;
+      phone: string | null;
+    } | null;
+  } | null;
 };

@@ -1,3 +1,6 @@
+"use client";
+
+import { useContext } from "react";
 import {
   ClipboardList,
   FileText,
@@ -6,12 +9,17 @@ import {
 } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import type { AdminOrder } from "@/types/order";
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
 
 type StatsGridProps = {
   orders: AdminOrder[];
 };
 
 export function StatsGrid({ orders }: StatsGridProps) {
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
   const validation = orders.filter(
     (order) => order.status === "VALIDATION"
   ).length;
@@ -31,30 +39,30 @@ export function StatsGrid({ orders }: StatsGridProps) {
   return (
     <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
       <DashboardCard
-        title="Pedidos nuevos"
+        title={t.statsNewOrders}
         value={validation}
-        description="Esperando revisión"
+        description={t.statsNewOrdersDescription}
         icon={ClipboardList}
       />
 
       <DashboardCard
-        title="Cotizaciones"
+        title={t.statsQuotes}
         value={quoted}
-        description="Pendientes de respuesta"
+        description={t.statsQuotesDescription}
         icon={FileText}
       />
 
       <DashboardCard
-        title="En preparación"
+        title={t.statsInPreparation}
         value={inProgress}
-        description="Pedidos aceptados"
+        description={t.statsInPreparationDescription}
         icon={PackageCheck}
       />
 
       <DashboardCard
-        title="En ruta"
+        title={t.statsOnRoute}
         value={onRoute}
-        description="Pedidos activos"
+        description={t.statsOnRouteDescription}
         icon={Truck}
       />
     </section>
