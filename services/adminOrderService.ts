@@ -37,6 +37,8 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
     throw new Error(`Could not fetch admin orders: ${error.message}`);
   }
 
+  console.log("ADMIN ORDERS:", data);
+  
   return (data ?? []) as unknown as AdminOrder[];
 }
 

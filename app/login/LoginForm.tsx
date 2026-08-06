@@ -88,7 +88,7 @@ export function LoginForm() {
           onChange={(event) => setEmail(event.target.value)}
           disabled={isLoading}
           placeholder="admin@delivery.com"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-soft disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
 
@@ -110,7 +110,7 @@ export function LoginForm() {
           onChange={(event) => setPassword(event.target.value)}
           disabled={isLoading}
           placeholder="Ingresa tu contraseña"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-soft disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
 
@@ -126,7 +126,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? "Ingresando..." : "Iniciar sesión"}
       </button>

@@ -4,7 +4,7 @@ export const translations = {
       title: "Delivery App",
       createOrder: "Crear Pedido",
       myOrders: "Mis Pedidos",
-      slogan: "Lo que necesites,\nlo pedís.",
+      slogan: "Lo que necesités,\nlo pedís.",
       description:
         "Compras, comida, mandados y servicios locales desde una sola app.",
       question: "¿Qué necesitás?",
@@ -129,10 +129,10 @@ export const translations = {
     },
 
     dashboardTitle: "Panel Administrativo",
-    dashboardSubtitle: "Resumen operativo de Delivery App.",
+    dashboardSubtitle: "Resumen operativo de Boomerang.",
 
     headerGreeting: "¡Hola, Admin! 👋",
-    headerSubtitle: "Bienvenido al panel de Delivery App.",
+    headerSubtitle: "Bienvenido al panel administrativo de Boomerang.",
     today: "Hoy",
 
     statsNewOrders: "Pedidos nuevos",
@@ -317,7 +317,7 @@ export const translations = {
       pending: "🟡 Quote Pending",
       quoteReceived: "Quote Received",
       quoteStatus: "Status",
-      description: "Order description",
+      description: "Description",
       createdAt: "Created at",
       accept: "Accept",
       reject: "Reject",
@@ -344,10 +344,10 @@ export const translations = {
     },
 
     dashboardTitle: "Admin Dashboard",
-    dashboardSubtitle: "Operational summary of Delivery App.",
+    dashboardSubtitle: "Operational summary of Boomerang.",
 
     headerGreeting: "Hello, Admin! 👋",
-    headerSubtitle: "Welcome to the Delivery App admin panel.",
+    headerSubtitle: "Welcome to the Boomerang admin panel.",
     today: "Today",
 
     statsNewOrders: "New Orders",

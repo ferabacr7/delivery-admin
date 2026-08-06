@@ -3,10 +3,11 @@
 import { useContext } from "react";
 import {
   ClipboardList,
-  FileText,
-  PackageCheck,
+  PackageOpen,
+  ReceiptText,
   Truck,
 } from "lucide-react";
+
 import { DashboardCard } from "./DashboardCard";
 import type { AdminOrder } from "@/types/order";
 import { LanguageContext } from "@/i18n/LanguageContext";
@@ -21,42 +22,45 @@ export function StatsGrid({ orders }: StatsGridProps) {
   const t = translations[language];
 
   const validation = orders.filter(
-    (order) => order.status === "VALIDATION"
+    (order) => order.status === "VALIDATION",
   ).length;
 
   const quoted = orders.filter(
-    (order) => order.status === "QUOTED"
+    (order) => order.status === "QUOTED",
   ).length;
 
   const inProgress = orders.filter(
-    (order) => order.status === "IN_PROGRESS"
+    (order) => order.status === "IN_PROGRESS",
   ).length;
 
   const onRoute = orders.filter(
-    (order) => order.status === "ON_ROUTE"
+    (order) => order.status === "ON_ROUTE",
   ).length;
 
   return (
-    <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <DashboardCard
         title={t.statsNewOrders}
         value={validation}
         description={t.statsNewOrdersDescription}
         icon={ClipboardList}
+        tone="teal"
       />
 
       <DashboardCard
         title={t.statsQuotes}
         value={quoted}
         description={t.statsQuotesDescription}
-        icon={FileText}
+        icon={ReceiptText}
+        tone="blue"
       />
 
       <DashboardCard
         title={t.statsInPreparation}
         value={inProgress}
         description={t.statsInPreparationDescription}
-        icon={PackageCheck}
+        icon={PackageOpen}
+        tone="amber"
       />
 
       <DashboardCard
@@ -64,6 +68,7 @@ export function StatsGrid({ orders }: StatsGridProps) {
         value={onRoute}
         description={t.statsOnRouteDescription}
         icon={Truck}
+        tone="violet"
       />
     </section>
   );
