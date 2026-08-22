@@ -1,17 +1,10 @@
 "use client";
 
-import { useOrderStatusRealtime } from "./OrderStatusRealtimeProvider";
+import { useContext } from "react";
 
-const statusLabels = {
-  VALIDATION: "Validación",
-  QUOTED: "Cotizado",
-  ACCEPTED: "Aceptado",
-  REJECTED: "Rechazado",
-  IN_PROGRESS: "En progreso",
-  ON_ROUTE: "En ruta",
-  DELIVERED: "Entregado",
-  CANCELLED: "Cancelado",
-} as const;
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
+import { useOrderStatusRealtime } from "./OrderStatusRealtimeProvider";
 
 const statusStyles = {
   VALIDATION: "border-amber-200 bg-amber-50 text-amber-700",
@@ -25,7 +18,20 @@ const statusStyles = {
 } as const;
 
 export function OrderStatusBadge() {
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
   const { effectiveStatus } = useOrderStatusRealtime();
+
+  const statusLabels = {
+    VALIDATION: t.statusValidation,
+    QUOTED: t.statusQuoted,
+    ACCEPTED: t.statusAccepted,
+    REJECTED: t.statusRejected,
+    IN_PROGRESS: t.statusInProgress,
+    ON_ROUTE: t.statusOnRoute,
+    DELIVERED: t.statusDelivered,
+    CANCELLED: t.statusCancelled,
+  } as const;
 
   return (
     <span

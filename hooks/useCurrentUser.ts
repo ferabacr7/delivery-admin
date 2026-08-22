@@ -32,7 +32,8 @@ function buildCurrentUser(
   const email = user.email ?? "";
   const emailName = email.split("@")[0] || "Admin";
 
-  const fullName = profile?.full_name?.trim() || emailName;
+  const fullName =
+    profile?.full_name?.trim() || emailName;
 
   const initial =
     fullName.charAt(0).toUpperCase() ||
@@ -51,9 +52,12 @@ function buildCurrentUser(
 export function useCurrentUser(): UseCurrentUserResult {
   const supabase = useMemo(() => createClient(), []);
 
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [currentUser, setCurrentUser] =
+    useState<CurrentUser | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -80,24 +84,36 @@ export function useCurrentUser(): UseCurrentUserResult {
           return;
         }
 
-        const { data: profile, error: profileError } = await supabase
+        const {
+          data: profileData,
+          error: profileError,
+        } = await supabase
           .from("profiles")
           .select("id, full_name, role")
           .eq("id", user.id)
-          .maybeSingle<UserProfile>();
+          .maybeSingle();
 
         if (profileError) {
           throw profileError;
         }
 
+        const profile =
+          (profileData as UserProfile | null) ?? null;
+
         if (isMounted) {
-          setCurrentUser(buildCurrentUser(user, profile));
+          setCurrentUser(
+            buildCurrentUser(user, profile),
+          );
         }
       } catch (caughtError) {
-        console.error("CURRENT USER ERROR:", caughtError);
+        console.error(
+          "CURRENT USER ERROR:",
+          caughtError,
+        );
 
         if (isMounted) {
           setCurrentUser(null);
+
           setError(
             caughtError instanceof Error
               ? caughtError.message

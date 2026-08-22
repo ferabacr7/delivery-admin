@@ -6,7 +6,7 @@ export default function LoginPage() {
       <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-slate-900">
-            Delivery Admin
+            ORBIT Admin
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">

@@ -19,7 +19,7 @@ export function DashboardHeader() {
 
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">
-            {language === "es" ? "Panel operativo" : "Operations panel"}
+            {t.dashboardEyebrow}
           </p>
 
           <h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">

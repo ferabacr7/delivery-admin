@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -13,6 +13,8 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
 import type { AdminDriver } from "@/services/adminDriverService";
 
 type DriverAssignmentCardProps = {
@@ -34,12 +36,18 @@ export function DriverAssignmentCard({
   currentDriverId,
 }: DriverAssignmentCardProps) {
   const router = useRouter();
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
+  const isSpanish = language === "es";
 
   const [selectedDriverId, setSelectedDriverId] = useState(
     currentDriverId ?? "",
   );
+
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackMessage>(null);
+  const [feedback, setFeedback] =
+    useState<FeedbackMessage>(null);
 
   const selectedDriver =
     drivers.find((driver) => driver.id === selectedDriverId) ?? null;
@@ -74,12 +82,15 @@ export function DriverAssignmentCard({
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
         setFeedback({
           type: "error",
-          text: data.error ?? "No se pudo asignar el repartidor.",
+          text:
+            isSpanish && data?.error
+              ? data.error
+              : t.driverAssignmentError,
         });
 
         return;
@@ -88,17 +99,20 @@ export function DriverAssignmentCard({
       setFeedback({
         type: "success",
         text: selectedDriver
-          ? `${selectedDriver.full_name} fue asignado correctamente a esta entrega.`
-          : "Repartidor asignado correctamente.",
+          ? `${selectedDriver.full_name} ${t.driverAssignmentToDelivery}`
+          : t.driverAssignmentSuccess,
       });
 
       router.refresh();
     } catch (error) {
-      console.error("Unexpected driver assignment error:", error);
+      console.error(
+        "Unexpected driver assignment error:",
+        error,
+      );
 
       setFeedback({
         type: "error",
-        text: "Ocurrió un error inesperado al guardar la asignación.",
+        text: t.driverAssignmentUnexpectedError,
       });
     } finally {
       setIsSaving(false);
@@ -121,11 +135,11 @@ export function DriverAssignmentCard({
 
             <div className="min-w-0">
               <h3 className="text-base font-semibold text-slate-950">
-                Asignación de repartidor
+                {t.driverAssignmentTitle}
               </h3>
 
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                Selecciona la persona responsable de esta entrega.
+                {t.driverAssignmentDescription}
               </p>
             </div>
           </div>
@@ -142,22 +156,27 @@ export function DriverAssignmentCard({
           <span
             className={[
               "h-1.5 w-1.5 rounded-full",
-              currentDriverId ? "bg-emerald-500" : "bg-amber-500",
+              currentDriverId
+                ? "bg-emerald-500"
+                : "bg-amber-500",
             ].join(" ")}
           />
 
           {currentDriverId
-            ? "Repartidor asignado"
-            : "Pendiente de asignación"}
+            ? t.driverAssignmentAssigned
+            : t.driverAssignmentPending}
         </span>
       </div>
 
       {!canAssign ? (
         <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm font-medium text-amber-700">
-          <AlertCircle className="mt-0.5 shrink-0" size={17} />
+          <AlertCircle
+            className="mt-0.5 shrink-0"
+            size={17}
+          />
 
           <p className="leading-5">
-            La orden debe estar aceptada antes de asignar un repartidor.
+            {t.driverAssignmentOrderMustBeAccepted}
           </p>
         </div>
       ) : null}
@@ -173,9 +192,15 @@ export function DriverAssignmentCard({
           ].join(" ")}
         >
           {feedback.type === "success" ? (
-            <CheckCircle2 className="mt-0.5 shrink-0" size={17} />
+            <CheckCircle2
+              className="mt-0.5 shrink-0"
+              size={17}
+            />
           ) : (
-            <AlertCircle className="mt-0.5 shrink-0" size={17} />
+            <AlertCircle
+              className="mt-0.5 shrink-0"
+              size={17}
+            />
           )}
 
           <p className="leading-5">{feedback.text}</p>
@@ -189,11 +214,11 @@ export function DriverAssignmentCard({
           </div>
 
           <p className="mt-4 text-sm font-semibold text-slate-800">
-            No hay repartidores activos
+            {t.driverAssignmentNoActiveDrivers}
           </p>
 
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            Activa o registra un perfil con el rol de repartidor para continuar.
+            {t.driverAssignmentNoActiveDriversDescription}
           </p>
         </div>
       ) : (
@@ -203,7 +228,7 @@ export function DriverAssignmentCard({
               htmlFor="driver"
               className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400"
             >
-              Repartidor
+              {t.driverAssignmentDriver}
             </label>
 
             <div className="relative mt-2">
@@ -216,12 +241,19 @@ export function DriverAssignmentCard({
                 disabled={isSaving || !canAssign}
                 className="min-h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-medium text-slate-900 outline-none transition focus:border-brand focus:ring-4 focus:ring-brand-soft disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
               >
-                <option value="">Selecciona un repartidor</option>
+                <option value="">
+                  {t.driverAssignmentSelectDriver}
+                </option>
 
                 {drivers.map((driver) => (
-                  <option key={driver.id} value={driver.id}>
+                  <option
+                    key={driver.id}
+                    value={driver.id}
+                  >
                     {driver.full_name}
-                    {driver.phone ? ` — ${driver.phone}` : ""}
+                    {driver.phone
+                      ? ` — ${driver.phone}`
+                      : ""}
                   </option>
                 ))}
               </select>
@@ -271,7 +303,8 @@ export function DriverAssignmentCard({
                     <Phone size={13} />
 
                     <span className="truncate">
-                      {selectedDriver.phone ?? "Sin teléfono registrado"}
+                      {selectedDriver.phone ??
+                        t.driverAssignmentNoPhone}
                     </span>
                   </div>
                 </div>
@@ -280,8 +313,8 @@ export function DriverAssignmentCard({
               <div className="mt-4 border-t border-slate-200/80 pt-3">
                 <p className="text-xs text-slate-500">
                   {selectedDriver.id === currentDriverId
-                    ? "Este repartidor ya está asignado a la entrega."
-                    : "Este repartidor será asignado al guardar los cambios."}
+                    ? t.driverAssignmentAlreadyAssigned
+                    : t.driverAssignmentWillBeAssigned}
                 </p>
               </div>
             </div>
@@ -290,18 +323,25 @@ export function DriverAssignmentCard({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!hasChanges || isSaving || !canAssign}
+            disabled={
+              !hasChanges ||
+              isSaving ||
+              !canAssign
+            }
             className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(247,95,42,0.20)] transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
           >
             {isSaving ? (
               <>
-                <LoaderCircle size={17} className="animate-spin" />
-                Guardando...
+                <LoaderCircle
+                  size={17}
+                  className="animate-spin"
+                />
+                {t.driverAssignmentSaving}
               </>
             ) : (
               <>
                 <Save size={17} />
-                Guardar asignación
+                {t.driverAssignmentSave}
               </>
             )}
           </button>

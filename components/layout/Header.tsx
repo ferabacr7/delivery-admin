@@ -9,12 +9,7 @@ import {
   Menu,
   PackageOpen,
 } from "lucide-react";
-import {
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -30,11 +25,18 @@ import {
 
 type OrderNotification = AdminOrderRealtimeEvent;
 
-function getOrderNumber(orderId: string) {
+function getOrderNumber(orderId?: string | null) {
+  if (!orderId) {
+    return "------";
+  }
+
   return orderId.slice(-6).toUpperCase();
 }
 
-function formatNotificationTime(date: string, language: "es" | "en") {
+function formatNotificationTime(
+  date: string,
+  language: "es" | "en",
+) {
   return new Intl.DateTimeFormat(
     language === "es" ? "es-CR" : "en-US",
     {
@@ -59,10 +61,6 @@ function getCalendarDays(date: Date) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
-  /*
-   * Convertimos domingo = 0 de JavaScript
-   * a una semana que empieza lunes.
-   */
   const startingDay = (firstDay.getDay() + 6) % 7;
 
   const days: Array<Date | null> = [];
@@ -78,7 +76,13 @@ function getCalendarDays(date: Date) {
   return days;
 }
 
-export function Header() {
+type HeaderProps = {
+  onMenuOpen: () => void;
+};
+
+export function Header({
+  onMenuOpen,
+}: HeaderProps) {
   const { language } = useContext(LanguageContext);
   const t = translations[language];
 
@@ -98,6 +102,17 @@ export function Header() {
   const notificationsRef = useRef<HTMLDivElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const notificationSoundIntervalRef = useRef<ReturnType<
+    typeof setInterval
+  > | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (notificationSoundIntervalRef.current) {
+        clearInterval(notificationSoundIntervalRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function unlockAudio() {
@@ -129,51 +144,102 @@ export function Header() {
     };
   }, []);
 
-  function playNotificationSound() {
+  async function playNotificationSound() {
+    if (!audioContextRef.current) {
+      const AudioContextClass =
+        window.AudioContext ||
+        (
+          window as typeof window & {
+            webkitAudioContext?: typeof AudioContext;
+          }
+        ).webkitAudioContext;
+
+      if (!AudioContextClass) {
+        return;
+      }
+
+      audioContextRef.current = new AudioContextClass();
+    }
+
     const audioContext = audioContextRef.current;
 
-    if (!audioContext || audioContext.state !== "running") {
+    if (audioContext.state === "suspended") {
+      try {
+        await audioContext.resume();
+      } catch {
+        return;
+      }
+    }
+
+    if (audioContext.state !== "running") {
       return;
     }
 
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
 
-    oscillator.type = "sine";
+    function playTone(
+      frequency: number,
+      startTime: number,
+      duration: number,
+      volume: number,
+    ) {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
 
-    oscillator.frequency.setValueAtTime(
-      880,
-      audioContext.currentTime,
-    );
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(
+        frequency,
+        startTime,
+      );
 
-    oscillator.frequency.setValueAtTime(
-      1175,
-      audioContext.currentTime + 0.12,
-    );
+      gain.gain.setValueAtTime(0.001, startTime);
 
-    gain.gain.setValueAtTime(0, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        volume,
+        startTime + 0.03,
+      );
 
-    gain.gain.linearRampToValueAtTime(
-      0.12,
-      audioContext.currentTime + 0.02,
-    );
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        startTime + duration,
+      );
 
-    gain.gain.linearRampToValueAtTime(
-      0,
-      audioContext.currentTime + 0.28,
-    );
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
 
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    }
 
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.3);
+    playTone(523.25, now, 0.45, 0.08);
+    playTone(659.25, now + 0.18, 0.55, 0.065);
+  }
+
+  function startNotificationSound() {
+    if (notificationSoundIntervalRef.current !== null) {
+      return;
+    }
+
+    void playNotificationSound();
+
+    notificationSoundIntervalRef.current = setInterval(() => {
+      void playNotificationSound();
+    }, 3000);
+  }
+
+  function stopNotificationSound() {
+    if (notificationSoundIntervalRef.current !== null) {
+      clearInterval(notificationSoundIntervalRef.current);
+      notificationSoundIntervalRef.current = null;
+    }
   }
 
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
 
-    function handleNewOrder(order: AdminOrderRealtimeEvent) {
+    function handleNewOrder(
+      order: AdminOrderRealtimeEvent,
+    ) {
       if (receivedOrderIds.current.has(order.id)) {
         return;
       }
@@ -189,7 +255,7 @@ export function Header() {
         (currentCount) => currentCount + 1,
       );
 
-      playNotificationSound();
+      startNotificationSound();
     }
 
     channel = subscribeToNewOrders(handleNewOrder);
@@ -221,7 +287,10 @@ export function Header() {
     document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick,
+      );
     };
   }, []);
 
@@ -233,6 +302,7 @@ export function Header() {
 
       if (nextValue) {
         setNotificationCount(0);
+        stopNotificationSound();
       }
 
       return nextValue;
@@ -307,20 +377,19 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="flex min-h-24 items-center justify-between gap-6 px-8 xl:px-10">
+      <div className="flex min-h-20 min-w-0 items-center justify-between gap-2 px-4 sm:min-h-24 sm:gap-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Left section */}
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
           <button
             type="button"
+            onClick={onMenuOpen}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 lg:hidden"
-            aria-label={
-              language === "es" ? "Abrir menú" : "Open menu"
-            }
+            aria-label={t.headerOpenMenu}
           >
             <Menu size={20} />
           </button>
 
-          <div className="min-w-0">
+          <div className="hidden min-w-0 sm:block">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-slate-950 xl:text-[28px]">
                 {t.headerGreeting}
@@ -341,21 +410,20 @@ export function Header() {
         </div>
 
         {/* Right section */}
-        <div className="flex shrink-0 items-center gap-2.5 xl:gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5 xl:gap-3">
           <LanguageSelector />
 
           {/* Calendar */}
-          <div className="relative hidden md:block" ref={calendarRef}>
+          <div
+            className="relative hidden md:block"
+            ref={calendarRef}
+          >
             <button
               type="button"
               onClick={handleCalendarToggle}
               className="flex h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand/30 hover:bg-brand-soft/30"
               aria-expanded={isCalendarOpen}
-              aria-label={
-                language === "es"
-                  ? "Abrir calendario"
-                  : "Open calendar"
-              }
+              aria-label={t.headerOpenCalendar}
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
                 <CalendarDays size={17} strokeWidth={2} />
@@ -374,17 +442,12 @@ export function Header() {
 
             {isCalendarOpen ? (
               <div className="absolute right-0 top-14 z-50 w-[320px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
-                {/* Calendar header */}
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
                     onClick={goToPreviousMonth}
                     className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                    aria-label={
-                      language === "es"
-                        ? "Mes anterior"
-                        : "Previous month"
-                    }
+                    aria-label={t.headerPreviousMonth}
                   >
                     <ChevronLeft size={18} />
                   </button>
@@ -397,17 +460,12 @@ export function Header() {
                     type="button"
                     onClick={goToNextMonth}
                     className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                    aria-label={
-                      language === "es"
-                        ? "Mes siguiente"
-                        : "Next month"
-                    }
+                    aria-label={t.headerNextMonth}
                   >
                     <ChevronRight size={18} />
                   </button>
                 </div>
 
-                {/* Week labels */}
                 <div className="mt-4 grid grid-cols-7 gap-1">
                   {weekDays.map((day) => (
                     <div
@@ -419,7 +477,6 @@ export function Header() {
                   ))}
                 </div>
 
-                {/* Days */}
                 <div className="grid grid-cols-7 gap-1">
                   {calendarDays.map((day, index) => {
                     if (!day) {
@@ -463,16 +520,13 @@ export function Header() {
                   })}
                 </div>
 
-                {/* Footer */}
                 <div className="mt-4 border-t border-slate-100 pt-3">
                   <button
                     type="button"
                     onClick={handleToday}
                     className="w-full rounded-xl bg-brand-soft px-3 py-2.5 text-xs font-semibold text-brand transition hover:bg-brand/10"
                   >
-                    {language === "es"
-                      ? "Ir a hoy"
-                      : "Go to today"}
+                    {t.headerGoToday}
                   </button>
                 </div>
               </div>
@@ -480,16 +534,15 @@ export function Header() {
           </div>
 
           {/* Notifications */}
-          <div className="relative" ref={notificationsRef}>
+          <div
+            className="relative"
+            ref={notificationsRef}
+          >
             <button
               type="button"
               onClick={handleNotificationsToggle}
               className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-brand/30 hover:bg-brand-soft/40 hover:text-brand"
-              aria-label={
-                language === "es"
-                  ? "Notificaciones"
-                  : "Notifications"
-              }
+              aria-label={t.headerNotifications}
               aria-expanded={isNotificationsOpen}
             >
               <Bell size={20} strokeWidth={2} />
@@ -504,19 +557,15 @@ export function Header() {
             </button>
 
             {isNotificationsOpen ? (
-              <div className="absolute right-0 top-14 z-50 w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
+              <div className="absolute right-0 top-14 z-50 w-[calc(100vw-2rem)] max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
                 <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                   <div>
                     <p className="text-sm font-semibold text-slate-950">
-                      {language === "es"
-                        ? "Notificaciones"
-                        : "Notifications"}
+                      {t.headerNotifications}
                     </p>
 
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {language === "es"
-                        ? "Pedidos nuevos recibidos"
-                        : "New orders received"}
+                      {t.headerNewOrdersReceived}
                     </p>
                   </div>
 
@@ -532,64 +581,55 @@ export function Header() {
                     </div>
 
                     <p className="mt-4 text-sm font-semibold text-slate-800">
-                      {language === "es"
-                        ? "No hay notificaciones nuevas"
-                        : "No new notifications"}
+                      {t.headerNoNewNotifications}
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {language === "es"
-                        ? "Los nuevos pedidos aparecerán aquí."
-                        : "New orders will appear here."}
+                      {t.headerNewOrdersAppearHere}
                     </p>
                   </div>
                 ) : (
                   <div className="max-h-[420px] overflow-y-auto">
-                    {notifications.map((order) => (
-                      <Link
-                        key={order.id}
-                        href={`/orders/${order.id}`}
-                        onClick={() =>
-                          setIsNotificationsOpen(false)
-                        }
-                        className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 hover:bg-slate-50"
-                      >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
-                          <PackageOpen size={17} />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-sm font-semibold text-slate-900">
-                              {language === "es"
-                                ? `Nuevo pedido #${getOrderNumber(
-                                    order.id,
-                                  )}`
-                                : `New order #${getOrderNumber(
-                                    order.id,
-                                  )}`}
-                            </p>
-
-                            <span className="shrink-0 text-[10px] font-medium text-slate-400">
-                              {formatNotificationTime(
-                                order.created_at,
-                                language,
-                              )}
-                            </span>
+                    {notifications
+                      .filter((order) => Boolean(order?.id))
+                      .map((order) => (
+                        <Link
+                          key={order.id}
+                          href={`/orders/${order.id}`}
+                          onClick={() =>
+                            setIsNotificationsOpen(false)
+                          }
+                          className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 hover:bg-slate-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                            <PackageOpen size={17} />
                           </div>
 
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                            {order.description}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm font-semibold text-slate-900">
+                                {t.headerNewOrder} #
+                                {getOrderNumber(order.id)}
+                              </p>
 
-                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-brand">
-                            {language === "es"
-                              ? "Ver pedido"
-                              : "View order"}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
+                              <span className="shrink-0 text-[10px] font-medium text-slate-400">
+                                {formatNotificationTime(
+                                  order.created_at,
+                                  language,
+                                )}
+                              </span>
+                            </div>
+
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                              {order.description}
+                            </p>
+
+                            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-brand">
+                              {t.headerViewOrder}
+                            </p>
+                          </div>
+                        </Link>
+                      ))}
                   </div>
                 )}
               </div>
@@ -597,7 +637,7 @@ export function Header() {
           </div>
 
           {/* User */}
-          <div className="ml-1 flex items-center gap-3 rounded-2xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-slate-50">
+          <div className="ml-1 hidden items-center gap-3 rounded-2xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-slate-50 sm:flex">
             <div className="hidden min-w-0 text-right lg:block">
               {isLoading ? (
                 <>
@@ -621,10 +661,7 @@ export function Header() {
                   </p>
 
                   <p className="mt-0.5 max-w-44 truncate text-xs text-red-500">
-                    {error ??
-                      (language === "es"
-                        ? "Usuario no disponible"
-                        : "User unavailable")}
+                    {error ?? t.headerUserUnavailable}
                   </p>
                 </>
               )}
@@ -634,12 +671,12 @@ export function Header() {
               className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-sm font-bold text-white shadow-[0_8px_20px_rgba(247,95,42,0.25)]"
               aria-label={
                 currentUser?.fullName ??
-                (language === "es"
-                  ? "Administrador"
-                  : "Administrator")
+                t.headerAdministrator
               }
             >
-              {isLoading ? "…" : (currentUser?.initial ?? "A")}
+              {isLoading
+                ? "…"
+                : (currentUser?.initial ?? "A")}
 
               <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
             </div>

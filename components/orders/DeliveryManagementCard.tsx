@@ -1,5 +1,6 @@
 "use client";
 
+import { useContext } from "react";
 import {
   AlertTriangle,
   CalendarCheck2,
@@ -11,6 +12,9 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
+
 type DeliveryManagementCardProps = {
   deliveryStatus: string | null;
   orderStatus: string;
@@ -19,30 +23,6 @@ type DeliveryManagementCardProps = {
   startedAt?: string | null;
   deliveredAt?: string | null;
 };
-
-function getStatusLabel(deliveryStatus: string | null, orderStatus: string) {
-  if (deliveryStatus === "DELIVERED" || orderStatus === "DELIVERED") {
-    return "Entregada";
-  }
-
-  if (
-    deliveryStatus === "IN_PROGRESS" ||
-    orderStatus === "IN_PROGRESS" ||
-    orderStatus === "ON_ROUTE"
-  ) {
-    return "En progreso";
-  }
-
-  if (deliveryStatus === "PENDING") {
-    return "Pendiente de inicio";
-  }
-
-  if (!deliveryStatus) {
-    return "Sin entrega activa";
-  }
-
-  return deliveryStatus;
-}
 
 function getStatusStyles(deliveryStatus: string | null, orderStatus: string) {
   if (deliveryStatus === "DELIVERED" || orderStatus === "DELIVERED") {
@@ -80,20 +60,6 @@ function getStatusStyles(deliveryStatus: string | null, orderStatus: string) {
   };
 }
 
-function formatDate(date: string | null | undefined) {
-  if (!date) {
-    return "No disponible";
-  }
-
-  return new Intl.DateTimeFormat("es-CR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
-}
-
 export function DeliveryManagementCard({
   deliveryStatus,
   orderStatus,
@@ -102,7 +68,50 @@ export function DeliveryManagementCard({
   startedAt,
   deliveredAt,
 }: DeliveryManagementCardProps) {
-  const statusLabel = getStatusLabel(deliveryStatus, orderStatus);
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
+  const locale = language === "es" ? "es-CR" : "en-US";
+
+  function getStatusLabel() {
+    if (deliveryStatus === "DELIVERED" || orderStatus === "DELIVERED") {
+      return t.deliveryManagementDelivered;
+    }
+
+    if (
+      deliveryStatus === "IN_PROGRESS" ||
+      orderStatus === "IN_PROGRESS" ||
+      orderStatus === "ON_ROUTE"
+    ) {
+      return t.deliveryManagementInProgress;
+    }
+
+    if (deliveryStatus === "PENDING") {
+      return t.deliveryManagementPendingStart;
+    }
+
+    if (!deliveryStatus) {
+      return t.deliveryManagementNoActiveDelivery;
+    }
+
+    return deliveryStatus;
+  }
+
+  function formatDate(date: string | null | undefined) {
+    if (!date) {
+      return t.deliveryManagementUnavailable;
+    }
+
+    return new Intl.DateTimeFormat(locale, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(date));
+  }
+
+  const statusLabel = getStatusLabel();
   const statusStyles = getStatusStyles(deliveryStatus, orderStatus);
 
   const isDelivered =
@@ -122,11 +131,11 @@ export function DeliveryManagementCard({
 
         <div>
           <h3 className="text-base font-semibold text-slate-950">
-            Monitoreo de entrega
+            {t.deliveryManagementTitle}
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            Supervisa el estado operativo de la entrega asignada.
+            {t.deliveryManagementDescription}
           </p>
         </div>
       </div>
@@ -155,7 +164,7 @@ export function DeliveryManagementCard({
 
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] opacity-70">
-              Estado actual
+              {t.deliveryManagementCurrentStatus}
             </p>
 
             <div className="mt-1.5 flex items-center gap-2">
@@ -177,7 +186,7 @@ export function DeliveryManagementCard({
           <AlertTriangle className="mt-0.5 shrink-0" size={17} />
 
           <p className="text-sm font-medium leading-5">
-            Debes asignar un repartidor para continuar con el flujo operativo.
+            {t.deliveryManagementAssignDriverWarning}
           </p>
         </div>
       ) : deliveryStatus === "PENDING" ? (
@@ -185,8 +194,7 @@ export function DeliveryManagementCard({
           <Info className="mt-0.5 shrink-0" size={17} />
 
           <p className="text-sm font-medium leading-5">
-            La entrega está esperando que el repartidor la inicie desde su
-            aplicación.
+            {t.deliveryManagementWaitingDriver}
           </p>
         </div>
       ) : null}
@@ -200,11 +208,11 @@ export function DeliveryManagementCard({
 
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-                Repartidor
+                {t.deliveryManagementDriver}
               </p>
 
               <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-                {driverName ?? "Sin repartidor asignado"}
+                {driverName ?? t.deliveryManagementNoDriver}
               </p>
             </div>
           </div>
@@ -218,11 +226,13 @@ export function DeliveryManagementCard({
 
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-                Inicio de entrega
+                {t.deliveryManagementDeliveryStart}
               </p>
 
               <p className="mt-1 text-sm font-medium leading-5 text-slate-700">
-                {startedAt ? formatDate(startedAt) : "Pendiente"}
+                {startedAt
+                  ? formatDate(startedAt)
+                  : t.deliveryManagementPending}
               </p>
             </div>
           </div>
@@ -236,11 +246,13 @@ export function DeliveryManagementCard({
 
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-                Entrega completada
+                {t.deliveryManagementDeliveryCompleted}
               </p>
 
               <p className="mt-1 text-sm font-medium leading-5 text-slate-700">
-                {deliveredAt ? formatDate(deliveredAt) : "Pendiente"}
+                {deliveredAt
+                  ? formatDate(deliveredAt)
+                  : t.deliveryManagementPending}
               </p>
             </div>
           </div>
@@ -251,9 +263,7 @@ export function DeliveryManagementCard({
         <Info className="mt-0.5 shrink-0 text-slate-400" size={17} />
 
         <p className="text-xs leading-5 text-slate-500">
-          El inicio y la finalización de la entrega se realizan desde la
-          aplicación del repartidor. El panel administrativo se utiliza para
-          asignar y supervisar la operación.
+          {t.deliveryManagementFooter}
         </p>
       </div>
     </section>

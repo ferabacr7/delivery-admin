@@ -1,7 +1,9 @@
-import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+import { createClient } from "@/lib/supabase/client";
 import type { AdminTrackingLocation } from "./adminTrackingService";
+
+const supabase = createClient();
 
 export function subscribeToTracking(
   deliveryId: string,
@@ -17,7 +19,7 @@ export function subscribeToTracking(
         table: "delivery_tracking",
         filter: `delivery_id=eq.${deliveryId}`,
       },
-      (payload) => {
+      (payload: { new: Record<string, unknown> }) => {
         onLocation(payload.new as AdminTrackingLocation);
       },
     )
@@ -26,7 +28,9 @@ export function subscribeToTracking(
   return channel;
 }
 
-export function unsubscribeTracking(channel: RealtimeChannel | null) {
+export function unsubscribeTracking(
+  channel: RealtimeChannel | null,
+) {
   if (channel) {
     supabase.removeChannel(channel);
   }

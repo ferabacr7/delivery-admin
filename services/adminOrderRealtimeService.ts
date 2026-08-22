@@ -1,5 +1,6 @@
-import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+
+import { createClient } from "@/lib/supabase/client";
 
 export type AdminOrderRealtimeEvent = {
   id: string;
@@ -9,6 +10,8 @@ export type AdminOrderRealtimeEvent = {
   profile_id: string;
   address_id: string | null;
 };
+
+const supabase = createClient();
 
 export function subscribeToNewOrders(
   onOrder: (order: AdminOrderRealtimeEvent) => void,
@@ -22,7 +25,7 @@ export function subscribeToNewOrders(
         schema: "public",
         table: "orders",
       },
-      (payload) => {
+      (payload: { new: Record<string, unknown> }) => {
         onOrder(payload.new as AdminOrderRealtimeEvent);
       },
     )
@@ -31,9 +34,7 @@ export function subscribeToNewOrders(
   return channel;
 }
 
-export function unsubscribeNewOrders(
-  channel: RealtimeChannel | null,
-) {
+export function unsubscribeNewOrders(channel: RealtimeChannel | null) {
   if (channel) {
     supabase.removeChannel(channel);
   }

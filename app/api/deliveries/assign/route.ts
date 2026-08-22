@@ -1,8 +1,55 @@
 import { NextResponse } from "next/server";
+
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function PATCH(request: Request) {
   try {
+    /*
+     * Verificar usuario autenticado.
+     */
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    /*
+     * Verificar rol administrador.
+     */
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(
+        "DRIVER ASSIGNMENT PROFILE LOOKUP ERROR:",
+        profileError,
+      );
+
+      return NextResponse.json(
+        { error: "Unable to verify administrator permissions" },
+        { status: 500 },
+      );
+    }
+
+    if (!profile || profile.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
 
     const orderId = body.orderId as string;

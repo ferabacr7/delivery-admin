@@ -1,5 +1,6 @@
 "use client";
 
+import { useContext } from "react";
 import {
   Check,
   CircleCheckBig,
@@ -8,30 +9,9 @@ import {
   Truck,
 } from "lucide-react";
 
+import { LanguageContext } from "@/i18n/LanguageContext";
+import { translations } from "@/i18n/translations";
 import { useOrderStatusRealtime } from "./OrderStatusRealtimeProvider";
-
-const steps = [
-  {
-    status: "ACCEPTED",
-    label: "Aceptado",
-    icon: CircleCheckBig,
-  },
-  {
-    status: "IN_PROGRESS",
-    label: "En progreso",
-    icon: PackageCheck,
-  },
-  {
-    status: "ON_ROUTE",
-    label: "En ruta",
-    icon: Truck,
-  },
-  {
-    status: "DELIVERED",
-    label: "Entregado",
-    icon: Check,
-  },
-] as const;
 
 const statusOrder = [
   "ACCEPTED",
@@ -41,11 +21,36 @@ const statusOrder = [
 ] as const;
 
 export function OrderTimeline() {
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
   const { operationalStatus } = useOrderStatusRealtime();
 
   if (!operationalStatus) {
     return null;
   }
+
+  const steps = [
+    {
+      status: "ACCEPTED",
+      label: t.statusAccepted,
+      icon: CircleCheckBig,
+    },
+    {
+      status: "IN_PROGRESS",
+      label: t.statusInProgress,
+      icon: PackageCheck,
+    },
+    {
+      status: "ON_ROUTE",
+      label: t.statusOnRoute,
+      icon: Truck,
+    },
+    {
+      status: "DELIVERED",
+      label: t.statusDelivered,
+      icon: Check,
+    },
+  ] as const;
 
   const currentIndex = statusOrder.indexOf(operationalStatus);
 
@@ -58,11 +63,11 @@ export function OrderTimeline() {
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-brand">
-            Progreso
+            {t.orderTimelineProgress}
           </p>
 
           <h2 className="mt-0.5 text-base font-semibold text-slate-950">
-            Estado de la entrega
+            {t.orderTimelineDeliveryStatus}
           </h2>
         </div>
       </div>

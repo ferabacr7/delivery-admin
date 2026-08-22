@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export type OrderStatus =
   | "VALIDATION"
@@ -50,6 +50,8 @@ type OrderStatusRealtimeProviderProps = {
 
 const OrderStatusRealtimeContext =
   createContext<OrderStatusRealtimeContextValue | null>(null);
+
+const supabase = createClient();
 
 function getEffectiveStatus(
   orderStatus: OrderStatus,
@@ -122,7 +124,7 @@ export function OrderStatusRealtimeProvider({
           table: "orders",
           filter: `id=eq.${orderId}`,
         },
-        (payload) => {
+        (payload: { new: Record<string, unknown> }) => {
           const nextStatus =
             payload.new.status as OrderStatus | undefined;
 
@@ -145,7 +147,7 @@ export function OrderStatusRealtimeProvider({
           table: "deliveries",
           filter: `order_id=eq.${orderId}`,
         },
-        (payload) => {
+        (payload: { new: Record<string, unknown> }) => {
           const nextStatus =
             payload.new.status as DeliveryStatus | undefined;
 
