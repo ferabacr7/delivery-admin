@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
           });
         },
       },
-    }
+    },
   );
 
   const {
@@ -37,15 +37,23 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
   const isLoginRoute = pathname.startsWith("/login");
 
-  // No existe una sesión: enviar al login.
+  const isPublicRoute =
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/account-deletion") ||
+    pathname.startsWith("/terms") ||
+    pathname.startsWith("/auth/email-confirmed") ||
+    pathname.startsWith("/auth/email-change-confirmed");
+
   if (!user) {
-    if (isLoginRoute) {
+    if (isLoginRoute || isPublicRoute) {
       return response;
     }
 
     const loginUrl = request.nextUrl.clone();
+
     loginUrl.pathname = "/login";
     loginUrl.search = "";
 
