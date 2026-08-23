@@ -40,12 +40,13 @@ export async function updateSession(request: NextRequest) {
 
   const isLoginRoute = pathname.startsWith("/login");
 
-  const isPublicRoute =
-    pathname.startsWith("/privacy") ||
-    pathname.startsWith("/account-deletion") ||
-    pathname.startsWith("/terms") ||
-    pathname.startsWith("/auth/email-confirmed") ||
-    pathname.startsWith("/auth/email-change-confirmed");
+const isPublicRoute =
+  pathname.startsWith("/privacy") ||
+  pathname.startsWith("/account-deletion") ||
+  pathname.startsWith("/terms") ||
+  pathname.startsWith("/auth/email-confirmed") ||
+  pathname.startsWith("/auth/email-change-confirmed") ||
+  pathname.startsWith("/auth/reset-password");
 
   if (!user) {
     if (isLoginRoute || isPublicRoute) {
