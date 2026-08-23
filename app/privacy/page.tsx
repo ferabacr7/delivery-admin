@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
           </p>
 
           <p className="mt-5 text-sm text-neutral-500">
-            Última actualización / Last updated: August 22, 2026
+            Última actualización / Last updated: August 23, 2026
           </p>
         </header>
 
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
               </li>
 
               <li>
-                <strong>Información relacionada con pagos:</strong>
+                <strong>Información relacionada con pagos:</strong>{" "}
                 método de pago seleccionado, como efectivo o SINPE, y
                 montos necesarios para gestionar el pedido. ORBIT no
                 solicita ni almacena números completos de tarjetas de
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
               </li>
 
               <li>
-                <strong>Información operativa de entrega:</strong>
+                <strong>Información operativa de entrega:</strong>{" "}
                 información necesaria para asignar, gestionar y
                 completar entregas, incluyendo datos de seguimiento y
                 ubicación del repartidor durante una entrega activa.
@@ -114,9 +114,10 @@ export default function PrivacyPolicyPage() {
 
               <li>
                 <strong>Información técnica:</strong> información
-                técnica necesaria para autenticación, seguridad,
-                funcionamiento de la aplicación y diagnóstico de
-                errores.
+                técnica que puede ser procesada por ORBIT o sus
+                proveedores tecnológicos cuando sea necesaria para
+                autenticación, seguridad, funcionamiento, protección
+                contra abuso y resolución de errores.
               </li>
             </ul>
           </div>
@@ -215,6 +216,12 @@ export default function PrivacyPolicyPage() {
               disponibles si el permiso correspondiente no es
               otorgado.
             </p>
+
+            <p className="mt-4 leading-7 text-neutral-300">
+              ORBIT no utiliza información de ubicación para publicidad
+              ni para rastrear a los usuarios a través de aplicaciones
+              o sitios web de otras empresas.
+            </p>
           </div>
 
           <div>
@@ -235,7 +242,7 @@ export default function PrivacyPolicyPage() {
               </li>
 
               <li>
-                <strong>Google Maps Platform / Google Routes:</strong>
+                <strong>Google Maps Platform / Google Routes:</strong>{" "}
                 funciones relacionadas con mapas, rutas, distancias y
                 tiempos estimados de viaje.
               </li>
@@ -341,10 +348,10 @@ export default function PrivacyPolicyPage() {
             <p className="mt-4 leading-7 text-neutral-300">
               Al procesarse la eliminación, se elimina la cuenta de
               autenticación y los datos personales asociados se
-              eliminan o anonimizan según corresponda. Ciertos registros
-              que deban conservarse por motivos legítimos pueden
-              permanecer de forma anonimizada o limitada según sea
-              necesario.
+              eliminan o anonimizan según corresponda. Ciertos
+              registros que deban conservarse por motivos legítimos
+              pueden permanecer de forma anonimizada o limitada según
+              sea necesario.
             </p>
 
             <p className="mt-4 leading-7 text-neutral-300">
@@ -494,7 +501,7 @@ export default function PrivacyPolicyPage() {
               </li>
 
               <li>
-                <strong>Delivery operational information:</strong>
+                <strong>Delivery operational information:</strong>{" "}
                 information necessary to assign, manage, track, and
                 complete deliveries, including driver location during
                 an active delivery.
@@ -502,8 +509,10 @@ export default function PrivacyPolicyPage() {
 
               <li>
                 <strong>Technical information:</strong> technical
-                information necessary for authentication, security,
-                application operation, and error diagnosis.
+                information that may be processed by ORBIT or its
+                technology providers when necessary for authentication,
+                security, service operation, abuse prevention, and error
+                resolution.
               </li>
             </ul>
           </div>
@@ -575,6 +584,12 @@ export default function PrivacyPolicyPage() {
               settings. Features that directly depend on location may
               be unavailable if the applicable permission is not
               granted.
+            </p>
+
+            <p className="mt-4 leading-7 text-neutral-300">
+              ORBIT does not use location information for advertising
+              or to track users across apps or websites owned by other
+              companies.
             </p>
           </div>
 
