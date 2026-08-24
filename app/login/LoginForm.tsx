@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -10,66 +11,181 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [successMessage, setSuccessMessage] =
+    useState("");
+
+  const [isLoading, setIsLoading] =
+    useState(false);
+
+  const [
+    isSendingRecovery,
+    setIsSendingRecovery,
+  ] = useState(false);
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     setErrorMessage("");
+    setSuccessMessage("");
     setIsLoading(true);
 
     try {
       const {
         data: { user },
         error: signInError,
-      } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      } =
+        await supabase.auth
+          .signInWithPassword({
+            email:
+              email
+                .trim()
+                .toLowerCase(),
+            password,
+          });
 
-      if (signInError || !user) {
-        setErrorMessage("El correo o la contraseña son incorrectos.");
+      if (
+        signInError ||
+        !user
+      ) {
+        setErrorMessage(
+          "El correo o la contraseña son incorrectos.",
+        );
+
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, role")
-        .eq("id", user.id)
-        .single();
+      const {
+        data: profile,
+        error: profileError,
+      } =
+        await supabase
+          .from("profiles")
+          .select("id, role")
+          .eq("id", user.id)
+          .single();
 
-      if (profileError || !profile) {
-        await supabase.auth.signOut();
+      if (
+        profileError ||
+        !profile
+      ) {
+        await supabase.auth
+          .signOut();
+
         setErrorMessage(
-          "No se encontró un perfil válido para este usuario."
+          "No se encontró un perfil válido para este usuario.",
         );
+
         return;
       }
 
-      if (profile.role !== "admin") {
-        await supabase.auth.signOut();
+      if (
+        profile.role !==
+        "admin"
+      ) {
+        await supabase.auth
+          .signOut();
+
         setErrorMessage(
-          "Esta cuenta no tiene permisos para acceder al panel administrativo."
+          "Esta cuenta no tiene permisos para acceder al panel administrativo.",
         );
+
         return;
       }
 
       router.replace("/");
       router.refresh();
     } catch (error) {
-      console.error("ADMIN LOGIN ERROR:", error);
+      console.error(
+        "ADMIN LOGIN ERROR:",
+        error,
+      );
 
       setErrorMessage(
-        "No fue posible iniciar sesión. Inténtalo nuevamente."
+        "No fue posible iniciar sesión. Inténtalo nuevamente.",
       );
     } finally {
       setIsLoading(false);
     }
   }
 
+  async function handlePasswordRecovery() {
+    if (
+      isSendingRecovery ||
+      isLoading
+    ) {
+      return;
+    }
+
+    const normalizedEmail =
+      email
+        .trim()
+        .toLowerCase();
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!normalizedEmail) {
+      setErrorMessage(
+        "Ingresá primero el correo electrónico de tu cuenta administrativa.",
+      );
+
+      return;
+    }
+
+    try {
+      setIsSendingRecovery(true);
+
+      const { error } =
+        await supabase.auth
+          .resetPasswordForEmail(
+            normalizedEmail,
+            {
+              redirectTo:
+                "https://orbit-cr.com/auth/reset-password",
+            },
+          );
+
+      if (error) {
+        console.error(
+          "ADMIN PASSWORD RECOVERY ERROR:",
+          error,
+        );
+
+        setErrorMessage(
+          "No fue posible enviar el enlace de recuperación. Intentá nuevamente más tarde.",
+        );
+
+        return;
+      }
+
+      setSuccessMessage(
+        "Si existe una cuenta asociada a ese correo, recibirás un enlace para restablecer la contraseña.",
+      );
+    } catch (error) {
+      console.error(
+        "ADMIN PASSWORD RECOVERY ERROR:",
+        error,
+      );
+
+      setErrorMessage(
+        "Ocurrió un error al solicitar la recuperación de contraseña.",
+      );
+    } finally {
+      setIsSendingRecovery(false);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
       <div>
         <label
           htmlFor="email"
@@ -85,9 +201,16 @@ export function LoginForm() {
           autoComplete="email"
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          disabled={isLoading}
-          placeholder="admin@delivery.com"
+          onChange={(event) =>
+            setEmail(
+              event.target.value,
+            )
+          }
+          disabled={
+            isLoading ||
+            isSendingRecovery
+          }
+          placeholder="admin@orbit-cr.com"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-soft disabled:cursor-not-allowed disabled:bg-slate-100"
         />
       </div>
@@ -107,11 +230,34 @@ export function LoginForm() {
           autoComplete="current-password"
           required
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          disabled={isLoading}
+          onChange={(event) =>
+            setPassword(
+              event.target.value,
+            )
+          }
+          disabled={
+            isLoading ||
+            isSendingRecovery
+          }
           placeholder="Ingresa tu contraseña"
           className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-soft disabled:cursor-not-allowed disabled:bg-slate-100"
         />
+
+        <button
+          type="button"
+          onClick={() => {
+            void handlePasswordRecovery();
+          }}
+          disabled={
+            isLoading ||
+            isSendingRecovery
+          }
+          className="mt-3 text-sm font-semibold text-brand transition hover:text-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSendingRecovery
+            ? "Enviando enlace..."
+            : "¿Olvidaste tu contraseña?"}
+        </button>
       </div>
 
       {errorMessage ? (
@@ -123,12 +269,26 @@ export function LoginForm() {
         </div>
       ) : null}
 
+      {successMessage ? (
+        <div
+          role="status"
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+        >
+          {successMessage}
+        </div>
+      ) : null}
+
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={
+          isLoading ||
+          isSendingRecovery
+        }
         className="w-full rounded-xl bg-brand px-4 py-3 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isLoading ? "Ingresando..." : "Iniciar sesión"}
+        {isLoading
+          ? "Ingresando..."
+          : "Iniciar sesión"}
       </button>
     </form>
   );
